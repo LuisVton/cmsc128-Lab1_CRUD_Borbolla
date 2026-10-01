@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Reset Password{% endblock %}
+{% block content %}
+<h1>Set a new password</h1>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {{ field("password", "New password", "password", "", errors.password, "new-password", "At least 8 characters, with a letter and a number") }}
+  {{ field("confirm", "Confirm new password", "password", "", errors.confirm, "new-password") }}
+  <button type="submit">Reset password</button>
+</form>
+{% endblock %}

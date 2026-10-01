@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<h1>Hello, {{ g.user.display_name }}</h1>
+<p class="sub">Member since {{ g.user.created_at[:10] }}</p>
+
+<h2>Profile details</h2>
+<form method="post" novalidate data-guard="1">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="action" value="profile">
+  {{ field("display_name", "Display name", value=form.display_name, error=errors.display_name, ac="name") }}
+  {{ field("username", "Username", value=form.username, error=errors.username, ac="username") }}
+  {{ field("email", "Email", "email", form.email, errors.email, "email") }}
+  <div class="row"><button type="submit">Save changes</button>
+  <button type="reset" class="secondary">Discard changes</button></div>
+</form>
+
+<h2>Change password</h2>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="action" value="password">
+  {{ field("current", "Current password", "password", "", pw_errors.current, "current-password") }}
+  {{ field("password", "New password", "password", "", pw_errors.password, "new-password", "At least 8 characters, with a letter and a number") }}
+  {{ field("confirm", "Confirm new password", "password", "", pw_errors.confirm, "new-password") }}
+  <button type="submit">Update password</button>
+</form>
+{% endblock %}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}To-Do App{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="nav">
+  <strong>To-Do App</strong>
+  <nav>
+  {% if g.user %}
+    <span class="who">Signed in as <b>{{ g.user.display_name }}</b></span>
+    <a href="{{ url_for('auth.profile') }}">Profile</a>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="link">Log Out</button>
+    </form>
+  {% else %}
+    <span class="who">Not signed in</span>
+    <a href="{{ url_for('auth.login') }}">Log In</a>
+    <a href="{{ url_for('auth.register') }}">Sign Up</a>
+  {% endif %}
+  </nav>
+</header>
+<main class="card">
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{ cat }}" role="{{ 'alert' if cat == 'error' else 'status' }}">{{ msg }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<script>
+let dirty = false;
+document.querySelectorAll("form").forEach(f => {
+  f.addEventListener("input", () => { if (f.dataset.guard) dirty = true; });
+  f.addEventListener("reset", () => { dirty = false; });
+  f.addEventListener("submit", () => {
+    dirty = false;
+    const b = f.querySelector("button[type=submit]");
+    if (b) { b.textContent = "Please wait…"; setTimeout(() => b.disabled = true, 0); }
+  });
+});
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+document.querySelectorAll("[data-toggle]").forEach(cb => cb.addEventListener("change", () =>
+  document.querySelectorAll(cb.dataset.toggle).forEach(i => i.type = cb.checked ? "text" : "password")));
+</script>
+</body></html>

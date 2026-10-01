@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}
+{% block title %}Log In{% endblock %}
+{% block content %}
+<h1>Log In</h1>
+<form method="post" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {{ field("identifier", "Username or email", value=identifier, ac="username") }}
+  {{ field("password", "Password", "password", ac="current-password") }}
+  <button type="submit">Log In</button>
+</form>
+<p class="sub"><a href="{{ url_for('auth.forgot') }}">Forgot password?</a> · <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+{% endblock %}
