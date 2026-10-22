@@ -128,3 +128,14 @@ form input, form select {
     opacity: 0.8;
 }
 .account-nav,.list-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.account-nav form{margin:0}.account-nav a{color:inherit}.list-controls{padding:18px 0}.list-controls select{padding:9px;border-radius:8px;max-width:290px}.list-controls button{padding:10px}
+/* Activity 3: task action beneath the header and consistent collaborative dialogs */
+.add-task-row { display:flex; justify-content:flex-end; margin-bottom:8px; }
+.add-task-row .primary { background:#172033; color:#fff; }
+.list-controls { padding-top:10px; }
+.member-description { color:#64748b; margin:0 0 18px; line-height:1.5; }
+.members-list { max-height:300px; overflow-y:auto; }
+.member-row { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:13px 0; border-bottom:1px solid #e4e9f2; }
+.member-row strong, .member-row small { display:block; }
+.member-row small { color:#64748b; margin-top:4px; }
+.member-remove { color:#991b1b; flex-shrink:0; }
+@media(max-width:560px) { .add-task-row .primary { width:100%; } }

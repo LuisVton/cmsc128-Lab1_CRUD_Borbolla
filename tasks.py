@@ -96,7 +96,8 @@ def members(list_id):
 def remove_member(list_id,member_id):
     lst=permitted_list(list_id)
     if not lst or lst['kind']!='collaborative' or (lst['owner_id']!=uid() and member_id!=uid()):return error('List not found',404)
-    db=get_db();db.execute('DELETE FROM list_members WHERE list_id=? AND user_id=?',(list_id,member_id));db.commit()
+    db=get_db();cur=db.execute('DELETE FROM list_members WHERE list_id=? AND user_id=?',(list_id,member_id));db.commit()
+    if not cur.rowcount:return error('Membership not found',404)
     return jsonify(message='Membership removed')
 
 @bp.delete('/api/lists/<int:list_id>')

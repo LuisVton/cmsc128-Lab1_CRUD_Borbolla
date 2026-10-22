@@ -13,10 +13,10 @@
         <h1>TaskFlow</h1>
         <p>Welcome, {{ g.user.display_name }} · Personal and collaborative lists</p>
     </div>
-    <div class="account-nav"><a href="{{ url_for('auth.profile') }}">Profile</a><form action="{{ url_for('auth.logout') }}" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="secondary">Log out</button></form><button id="addBtn" class="primary">+ Add Task</button></div>
+    <div class="account-nav"><a href="{{ url_for('auth.profile') }}">Profile</a><form action="{{ url_for('auth.logout') }}" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="secondary">Log out</button></form></div>
 </header>
 
-<main class="container"><section class="list-controls"><label>Current list <select id="listSelect"></select></label><button id="newListBtn" class="secondary">+ Collaborative list</button><button id="inviteBtn" class="secondary">+ Invite user</button><span id="listNotice" role="status"></span></section>
+<main class="container"><div class="add-task-row"><button id="addBtn" class="primary">+ Add Task</button></div><section class="list-controls"><label>Current list <select id="listSelect"></select></label><button id="newListBtn" class="secondary">+ Collaborative list</button><button id="inviteBtn" class="secondary">+ Invite user</button><button id="membersBtn" class="secondary" hidden>Manage members</button><span id="listNotice" role="status"></span></section>
     <section class="stats">
         <div class="stat"><span id="totalCount">0</span><small>Total</small></div>
         <div class="stat"><span id="activeCount">0</span><small>Active</small></div>
@@ -89,6 +89,33 @@
                 <button type="submit" class="primary">Save Task</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div id="listModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="listModalTitle">
+    <div class="modal-card">
+        <div class="modal-header"><h2 id="listModalTitle">Create Collaborative List</h2><button type="button" id="closeListModal" class="icon-btn" aria-label="Close">×</button></div>
+        <form id="listForm">
+            <label>Collaborative list name<input id="listName" required maxlength="100" placeholder="e.g. CMSC 128 Group Project"></label>
+            <div class="form-actions"><button type="button" id="cancelListModal" class="secondary">Cancel</button><button type="submit" class="primary">Create List</button></div>
+        </form>
+    </div>
+</div>
+<div id="inviteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
+    <div class="modal-card">
+        <div class="modal-header"><h2 id="inviteModalTitle">Invite a Member</h2><button type="button" id="closeInviteModal" class="icon-btn" aria-label="Close">×</button></div>
+        <form id="inviteForm">
+            <label>Registered username or email<input id="inviteIdentifier" required maxlength="254" placeholder="e.g. victor_test"></label>
+            <div class="form-actions"><button type="button" id="cancelInviteModal" class="secondary">Cancel</button><button type="submit" class="primary">Add Member</button></div>
+        </form>
+    </div>
+</div>
+<div id="membersModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="membersModalTitle">
+    <div class="modal-card">
+        <div class="modal-header"><h2 id="membersModalTitle">Manage Members</h2><button type="button" id="closeMembersModal" class="icon-btn" aria-label="Close">×</button></div>
+        <p class="member-description">Remove a member to immediately revoke their access to this collaborative list.</p>
+        <div id="membersList" class="members-list"></div>
+        <div class="form-actions"><button type="button" id="doneMembersModal" class="secondary">Done</button></div>
     </div>
 </div>
 

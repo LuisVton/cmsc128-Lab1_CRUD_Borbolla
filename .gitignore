@@ -1,6 +1,26 @@
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+
+# SQLite database
 instance/
 *.db
-__pycache__/
+*.sqlite
+*.sqlite3
+
+# Python virtual environments
 venv/
 .venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

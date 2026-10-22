@@ -6,7 +6,7 @@ async function loadLists(preferred=null) {
  const lists=await r.json(); const select=document.getElementById('listSelect');
  select.replaceChildren(); for(const list of lists){const option=document.createElement('option');option.value=list.id;option.textContent=`${list.name} (${list.kind}${list.is_owner?' · owner':''})`;select.append(option);}
  currentListId=lists.some(l=>l.id===Number(preferred??currentListId))?Number(preferred??currentListId):lists[0]?.id;
- select.value=currentListId; document.getElementById('inviteBtn').hidden=!lists.find(l=>l.id===currentListId)?.is_owner || lists.find(l=>l.id===currentListId)?.kind!=='collaborative';
+ select.value=currentListId; const selected=lists.find(l=>l.id===currentListId); const canManage=Boolean(selected?.is_owner && selected?.kind==='collaborative'); document.getElementById('inviteBtn').hidden=!canManage; document.getElementById('membersBtn').hidden=!canManage;
  await loadTasks();
 }
 let tasks = [];
@@ -301,14 +301,65 @@ window.addEventListener("click", event => {
 
 
 document.getElementById('listSelect').addEventListener('change', async e=>{currentListId=Number(e.target.value);await loadLists(currentListId)});
-document.getElementById('newListBtn').addEventListener('click', async ()=>{
- const name=prompt('Collaborative list name:');if(!name?.trim())return;
- const r=await apiFetch('/api/lists',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
- const d=await r.json();if(!r.ok){alert(d.error);return;}await loadLists(d.id);
+function showDialog(id, focusId) {
+    $(id).classList.remove('hidden');
+    if (focusId) $(focusId).focus();
+}
+function hideDialog(id) { $(id).classList.add('hidden'); }
+function bindDialog(id, closeIds) {
+    closeIds.forEach(buttonId => $(buttonId).addEventListener('click', () => hideDialog(id)));
+    $(id).addEventListener('click', event => { if (event.target === $(id)) hideDialog(id); });
+}
+bindDialog('listModal', ['closeListModal', 'cancelListModal']);
+bindDialog('inviteModal', ['closeInviteModal', 'cancelInviteModal']);
+bindDialog('membersModal', ['closeMembersModal', 'doneMembersModal']);
+$('newListBtn').addEventListener('click', () => {
+    $('listForm').reset(); showDialog('listModal', 'listName');
 });
-document.getElementById('inviteBtn').addEventListener('click',async ()=>{
- const identifier=prompt('Registered username or email to invite:');if(!identifier?.trim())return;
- const r=await apiFetch(`/api/lists/${currentListId}/members`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:identifier.trim()})});
- const d=await r.json();alert(r.ok?'Member added successfully':d.error);
+$('listForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const name=$('listName').value.trim(); if (!name) return;
+    try {
+        const r=await apiFetch('/api/lists', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+        const d=await r.json(); if(!r.ok) throw Error(d.error || 'Could not create list');
+        hideDialog('listModal'); await loadLists(d.id); showToast('Collaborative list created.');
+    } catch(e) { showToast(e.message); }
 });
-loadLists().catch(e=>alert(e.message));
+$('inviteBtn').addEventListener('click', () => {
+    $('inviteForm').reset(); showDialog('inviteModal', 'inviteIdentifier');
+});
+$('inviteForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const identifier=$('inviteIdentifier').value.trim(); if(!identifier) return;
+    try {
+        const r=await apiFetch(`/api/lists/${currentListId}/members`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier})});
+        const d=await r.json(); if(!r.ok) throw Error(d.error || 'Could not invite member');
+        hideDialog('inviteModal'); showToast('Member added successfully.');
+    } catch(e) { showToast(e.message); }
+});
+async function refreshMembers() {
+    const r=await apiFetch(`/api/lists/${currentListId}/members`);
+    if(!r.ok) { showToast('Cannot load members.'); return; }
+    const members=await r.json(); const container=$('membersList'); container.replaceChildren();
+    if (!members.length) { const p=document.createElement('p');p.textContent='No invited members yet.';container.append(p);return; }
+    members.forEach(member => {
+        const row=document.createElement('div');row.className='member-row';
+        const details=document.createElement('div');
+        const name=document.createElement('strong');name.textContent=member.display_name || member.username;
+        const username=document.createElement('small');username.textContent=`@${member.username}`;
+        details.append(name,username);
+        const remove=document.createElement('button');remove.className='secondary member-remove';remove.type='button';remove.textContent='Remove';
+        remove.addEventListener('click', async () => {
+            if (!confirm(`Remove ${member.username} from this list?`)) return;
+            const r=await apiFetch(`/api/lists/${currentListId}/members/${member.id}`,{method:'DELETE'});
+            if(!r.ok) { const d=await r.json();showToast(d.error || 'Could not remove member');return; }
+            showToast('Member removed.'); await refreshMembers();
+        });
+        row.append(details,remove);container.append(row);
+    });
+}
+$('membersBtn').addEventListener('click',async () => {showDialog('membersModal');await refreshMembers();});
+document.addEventListener('keydown',event => {
+    if(event.key==='Escape') ['listModal','inviteModal','membersModal'].forEach(hideDialog);
+});
+loadLists().catch(e=>showToast(e.message));
