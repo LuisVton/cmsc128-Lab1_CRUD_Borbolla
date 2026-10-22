@@ -20,7 +20,34 @@ CREATE TABLE IF NOT EXISTS password_resets (
     expires_at TEXT NOT NULL,
     used INTEGER NOT NULL DEFAULT 0
 );
--- Next activity: add  todos(id, user_id REFERENCES users(id), ...)  for owner-based access.
+CREATE TABLE IF NOT EXISTS lists (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ name TEXT NOT NULL CHECK(length(name) BETWEEN 1 AND 100),
+ kind TEXT NOT NULL CHECK(kind IN ('personal','collaborative')),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS one_personal_list ON lists(owner_id) WHERE kind='personal';
+CREATE TABLE IF NOT EXISTS list_members (
+ list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ PRIMARY KEY(list_id,user_id)
+);
+CREATE TABLE IF NOT EXISTS tasks (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+ user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ title TEXT NOT NULL,
+ due_date TEXT NOT NULL,
+ priority TEXT NOT NULL CHECK(priority IN ('Low','Med','High')),
+ tag TEXT NOT NULL CHECK(tag IN ('School','Personal','Others')),
+ completed INTEGER NOT NULL DEFAULT 0 CHECK(completed IN (0,1)),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS tasks_list_idx ON tasks(list_id,deleted_at);
+CREATE INDEX IF NOT EXISTS lists_owner_idx ON lists(owner_id);
+CREATE INDEX IF NOT EXISTS members_user_idx ON list_members(user_id);
 """
 
 def get_db():

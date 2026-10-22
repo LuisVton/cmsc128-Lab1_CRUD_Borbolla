@@ -65,12 +65,12 @@ def now():
 # ---------- routes ----------
 @bp.route("/")
 def index():
-    return redirect(url_for("auth.profile" if g.user else "auth.login"))
+    return redirect(url_for("tasks.dashboard" if g.user else "auth.login"))
 
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if g.user:
-        return redirect(url_for("auth.profile"))
+        return redirect(url_for("tasks.dashboard"))
     form, errors = {}, {}
     if request.method == "POST":
         form = identity_form()
@@ -93,7 +93,7 @@ def register():
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if g.user:
-        return redirect(url_for("auth.profile"))
+        return redirect(url_for("tasks.dashboard"))
     identifier = ""
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
@@ -103,7 +103,7 @@ def login():
         ok = check_password_hash(user["password_hash"] if user else DUMMY_HASH, pw)
         if user and ok:
             start_session(user)
-            return redirect(url_for("auth.profile"))
+            return redirect(url_for("tasks.dashboard"))
         flash("Incorrect username/email or password.", "error")
     return render_template("login.html", identifier=identifier)
 

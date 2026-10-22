@@ -33,8 +33,8 @@ def create_app():
     @app.before_request
     def protect_and_load_user():
         session.setdefault("_csrf", secrets.token_hex(16))
-        if request.method == "POST" and not secrets.compare_digest(
-                request.form.get("_csrf", ""), session["_csrf"]):
+        if request.method in ("POST", "PUT", "PATCH", "DELETE") and not secrets.compare_digest(
+                request.headers.get("X-CSRF-Token", "") if request.path.startswith("/api/") else request.form.get("_csrf", ""), session["_csrf"]):
             abort(400, "Invalid or missing form token. Reload the page and try again.")
         g.user = None
         uid = session.get("uid")
@@ -57,6 +57,8 @@ def create_app():
 
     from auth import bp
     app.register_blueprint(bp)
+    from tasks import bp as tasks_bp
+    app.register_blueprint(tasks_bp)
     return app
 
 app = create_app()

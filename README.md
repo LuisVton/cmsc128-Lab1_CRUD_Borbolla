@@ -1,65 +1,80 @@
-# To-Do App: Authentication & User Accounts (CMSC 128 Lab 2)
+# CMSC 128 — Activity 3: Multi-Account CRUD (UBAC)
 
-Account system for the Lab 1 To-Do List: registration, login/logout, persistent sessions, profile editing, and password recovery by email.
+An integration of the **Activity 1 TaskFlow CRUD** app (main) and **Activity 2 Accounts** app (act2-accounts). Stack: HTML/CSS/vanilla JavaScript, Flask, SQLite.
 
-## Stack and approach
-- **Frontend:** server-rendered HTML (Jinja2), CSS, a little vanilla JS (loading state, show-password, unsaved-changes warning)
-- **Backend:** Flask (Python). **Database:** SQLite (`instance/app.db`)
-- **Passwords:** Werkzeug `generate_password_hash` (salted scrypt/PBKDF2), verified with `check_password_hash`
-- **Sessions:** Flask signed cookie session (HttpOnly, SameSite=Lax, 7-day lifetime). The secret key is read from `SECRET_KEY` or generated once into `instance/secret_key`, so backend restarts keep users logged in.
+## Run locally
 
-## Structure
-```
-app.py        app factory, session/CSRF/current-user loading
-auth.py       routes: register, login, logout, profile, forgot/reset
-db.py         SQLite connection and schema
-mailer.py     reset email (SMTP or demo mode)
-templates/    Jinja pages      static/  CSS
-.env.example  variable names only
-```
-
-## Install and run
 ```bash
-python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env        # optional; fill in SMTP to send real email
-python app.py               # http://127.0.0.1:5000
+cp .env.example .env  # Windows: copy .env.example .env
+python app.py
 ```
-The database and tables are created automatically on first start (`instance/app.db`). Inspect it with *SQLite Viewer* / *SQLite* VS Code extensions or DB Browser for SQLite; `password_hash` shows a hash, never the password.
 
-## Features
-Sign up (display name, username, email, password) · login by username or email · protected profile page (`Hello, <name>` + Log Out) · logout (session cleared, pages sent `no-store`) · edit display name/username/email/password with uniqueness validation · forgot/reset password · CSRF tokens on all POSTs.
+Open http://127.0.0.1:5000, register two users **using `/register`**, then log in and create 3–5 tasks for each user. Do not prepopulate account passwords or commit `instance/app.db`. For production, set a long random `SECRET_KEY` in `.env`, configure HTTPS and `SESSION_COOKIE_SECURE=1`, and disable debug mode. The app generates and persists a secret key in `instance/secret_key` if none is configured.
 
-## Endpoints
-| Method | Route | Purpose |
-|---|---|---|
-| GET/POST | `/register` | Create account |
-| GET/POST | `/login` | Log in, start session |
-| POST | `/logout` | End session |
-| GET/POST | `/profile` | Update profile (`action=profile`) or password (`action=password`); login required |
-| GET/POST | `/forgot-password` | Request reset link |
-| GET/POST | `/reset-password/<token>` | Set new password |
+SQLite database: `instance/app.db`. Use **VS Code SQLite Viewer** or **DB Browser for SQLite** to inspect `users`, `lists`, `list_members`, and `tasks`. `users.password_hash` contains salted hashes, not plaintext passwords. Never share the database or `.env` publicly.
 
-## Session mechanism
-On login, `session.clear()` then `uid` and `session_version` are stored in the signed cookie. Each request loads the user from the DB; if the user is gone or `session_version` changed, the session is dropped. Changing or resetting a password increments `session_version`, signing out other devices. Refresh, back/forward and restarts keep you logged in because state lives in the cookie, validated against the DB.
+## Integration and merge approach
 
-## Password recovery mechanism
-1. User submits username/email; the response is identical whether or not the account exists (no account enumeration).
-2. A random token (`secrets.token_urlsafe(32)`) is generated; only its **SHA-256 hash** is stored with a 30-minute expiry (`RESET_TOKEN_MINUTES`).
-3. The link `/reset-password/<token>` is emailed via SMTP.
-4. Submitting a valid new password updates the hash, marks all the user's tokens used (single use), and invalidates existing sessions. The old password stops working.
+The integrated files were built from the provided `main` and `act2-accounts` ZIP snapshots. Activity 2's `app.py`, `auth.py`, `db.py`, `mailer.py`, and account templates are retained. Activity 1's task page, styling, and JavaScript were copied to `templates/tasks.html`, `static/tasks.css`, and `static/tasks.js`, adapted to support selected lists, CSRF headers, and user sessions. `tasks.py` contains the integrated CRUD and access checks. Conflicting app entry points and `/` routes were resolved by keeping Activity 2's app factory and auth blueprint, registering a new tasks blueprint, and redirecting authenticated users to `/dashboard`. Activity 1's globally accessible `tasks` table was replaced by user-linked tasks.
 
-**Demo mode (no SMTP configured):** the link is printed to the server console and appended to `instance/outbox.log`. *Limitations:* anyone with server access can read links; nothing is actually emailed. Real deployments need SMTP/HTTPS and `SESSION_COOKIE_SECURE=1`. Set `BASE_URL` so links don't depend on the request's Host header.
+**Git history caveat:** ZIP downloads do not include `.git` history. The actual required `git merge` must be performed in your existing Git repository; do not claim the ZIP integration alone is evidence of a Git merge. From a clean clone of your existing repository:
 
-## Secrets
-`.env`, `instance/` (DB, secret key, outbox) are in `.gitignore`. Only `.env.example` is committed.
-
-## Git workflow
 ```bash
-git checkout -b act2-accounts
-git add . && git commit -m "cmsc128-Indiv-Act2"
-git push -u origin act2-accounts
+git fetch origin
+git switch act2-accounts
+git pull
+git switch -c act3-ubac
+git merge origin/main
+# resolve conflicts, then copy the integrated application files from this ZIP
+git add .
+git commit -m "cmsc128-Indiv-Act3-finalX"
+git push -u origin act3-ubac
 ```
 
-## Next activity
-`users.id` is the owner key: add `todos.user_id REFERENCES users(id)`, filter queries by `g.user["id"]`, and use `@login_required` on todo routes.
+If `act3-ubac` already exists, switch to it rather than recreating it. Check `git status` and resolve any actual conflicts before committing. Pair work requires separate contributor branches and PRs.
+
+## Schema
+
+- `users(id, username, email, display_name, password_hash, session_version, created_at)`: Activity 2 accounts.
+- `password_resets`: Activity 2 password recovery tokens.
+- `lists(id, owner_id → users.id, name, kind)`: one personal list per user (partial unique index), any number of collaborative lists.
+- `list_members(list_id → lists.id, user_id → users.id)`: composite primary key, collaborative membership only.
+- `tasks(id, list_id → lists.id, user_id → users.id, title, due_date, priority, tag, completed, created_at, deleted_at)`: `user_id` is the task creator; `list_id` identifies the access-controlled container. All foreign keys use SQLite `PRAGMA foreign_keys=ON`.
+
+Personal list access is restricted to its owner. Collaborative list access is granted to the owner or an explicitly invited member. Members may create/edit/complete/delete tasks within the shared list; only the list owner can invite/remove other members or delete the list. Tasks do not duplicate usernames, emails, or password hashes.
+
+## Endpoints and authorization
+
+| Method | Endpoint | Authorization |
+|---|---|---|
+| GET | `/dashboard` | Signed-in user |
+| GET | `/api/lists` | Only owned/member lists |
+| POST | `/api/lists` | Create collaborative list as owner |
+| GET, DELETE | `/api/lists/<id>` | GET owner/member; DELETE owner only, collaborative only |
+| GET, POST | `/api/lists/<id>/members` | GET owner/member; POST owner only |
+| DELETE | `/api/lists/<id>/members/<user_id>` | Owner can remove members; member can leave |
+| GET, POST | `/api/tasks?list_id=<id>`, `/api/tasks` | Filter by authorized list; POST body includes `list_id` |
+| GET, PUT, DELETE | `/api/tasks/<id>` | `task_access()` checks list owner or membership |
+| PATCH | `/api/tasks/<id>/complete` | Same membership check |
+| POST | `/api/tasks/<id>/undo` | Same membership check; 5-second window |
+| DELETE | `/api/tasks/<id>/finalize` | Same membership check |
+
+All API mutations require `X-CSRF-Token` matching the session token (included in the dashboard meta tag); account form POSTs use hidden `_csrf` inputs. Requests for inaccessible task/list IDs return **404**. Parameterized SQL protects against injection. Login reuses Activity 2 password hashing, cookie session, session-version invalidation, and login session rotation. Flask session cookies persist for seven days; the signing secret is persistent across restarts. `Cache-Control: no-store` reduces browser-back leakage after logout.
+
+SQLite has no native PostgreSQL-style row-level security; the equivalent here is **server-side ownership/membership filtering** on every data operation.
+
+## Tests and defense
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests check personal task isolation, IDOR attempts on reads/writes/delete/undo, authorized collaboration, unauthorized invitation, and CSRF. Before defense, manually check account registration, login, logout, refresh, backend restart, group invitations, task editing and 5-second Undo in a browser. Use the SQLite viewer to show users and tasks. Prepare two real accounts registered through the page and 3–5 tasks each; no demo accounts are shipped.
+
+**Trace an IDOR:** `GET /api/tasks/42` → `task_access(42)` → SQL joins `tasks` to `lists` and requires `lists.owner_id = session user ID` **or** membership in `list_members` → if no row matches, 404 without exposing task data. The same function protects update, complete, delete, undo, and finalize. An authenticated user's ID comes from Activity 2's verified session, never from the browser's JSON body.
+
+**Defense talking points:** Explain why `user_id` is a foreign key, why list membership is a separate table, why session cookies are signed, why CSRF and authorization solve different problems, and why checking only the frontend would not stop IDOR.

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow — CMSC 128 To-Do List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+    <div>
+        <h1>TaskFlow</h1>
+        <p>CMSC 128 • Basic CRUD To-Do List</p>
+    </div>
+    <button id="addBtn" class="primary">+ Add Task</button>
+</header>
+
+<main class="container">
+    <section class="stats">
+        <div class="stat"><span id="totalCount">0</span><small>Total</small></div>
+        <div class="stat"><span id="activeCount">0</span><small>Active</small></div>
+        <div class="stat"><span id="doneCount">0</span><small>Completed</small></div>
+    </section>
+
+    <section class="toolbar">
+        <input id="searchInput" type="search" placeholder="Search tasks...">
+        <select id="tagFilter">
+            <option value="">All tags</option>
+            <option>School</option>
+            <option>Personal</option>
+            <option>Others</option>
+        </select>
+        <select id="priorityFilter">
+            <option value="">All priorities</option>
+            <option>High</option>
+            <option>Med</option>
+            <option>Low</option>
+        </select>
+        <select id="sortSelect">
+            <option value="due_date">Sort: Due Date</option>
+            <option value="created_at">Sort: Date Added</option>
+            <option value="priority">Sort: Priority</option>
+            <option value="tag">Sort: Tag</option>
+        </select>
+        <button id="calendarBtn" class="secondary">Calendar</button>
+    </section>
+
+    <section id="taskList" class="task-list"></section>
+    <div id="emptyState" class="empty hidden">
+        <div>✓</div>
+        <h2>No tasks found</h2>
+        <p>Add a task or change your filters.</p>
+    </div>
+</main>
+
+<div id="modal" class="modal hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add Task</h2>
+            <button id="closeModal" class="icon-btn">×</button>
+        </div>
+        <form id="taskForm">
+            <input type="hidden" id="taskId">
+            <label>Title
+                <input id="title" required maxlength="120" placeholder="e.g. Finish database report">
+            </label>
+            <label>Due date and time
+                <input id="dueDate" type="datetime-local" required>
+            </label>
+            <div class="form-row">
+                <label>Priority
+                    <select id="priority" required>
+                        <option>Low</option>
+                        <option selected>Med</option>
+                        <option>High</option>
+                    </select>
+                </label>
+                <label>Tag
+                    <select id="tag" required>
+                        <option>School</option>
+                        <option>Personal</option>
+                        <option>Others</option>
+                    </select>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancelBtn" class="secondary">Cancel</button>
+                <button type="submit" class="primary">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="calendarModal" class="modal hidden">
+    <div class="modal-card calendar-card">
+        <div class="modal-header">
+            <h2>Task Calendar</h2>
+            <button id="closeCalendar" class="icon-btn">×</button>
+        </div>
+        <div class="calendar-nav">
+            <button id="prevMonth" class="secondary">‹</button>
+            <strong id="monthLabel"></strong>
+            <button id="nextMonth" class="secondary">›</button>
+        </div>
+        <div id="calendar" class="calendar"></div>
+        <div id="calendarTasks" class="calendar-tasks">Select a date to see its tasks.</div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
