@@ -21,21 +21,7 @@ SQLite database: `instance/app.db`. Use **VS Code SQLite Viewer** or **DB Browse
 
 The integrated files were built from the provided `main` and `act2-accounts` ZIP snapshots. Activity 2's `app.py`, `auth.py`, `db.py`, `mailer.py`, and account templates are retained. Activity 1's task page, styling, and JavaScript were copied to `templates/tasks.html`, `static/tasks.css`, and `static/tasks.js`, adapted to support selected lists, CSRF headers, and user sessions. `tasks.py` contains the integrated CRUD and access checks. Conflicting app entry points and `/` routes were resolved by keeping Activity 2's app factory and auth blueprint, registering a new tasks blueprint, and redirecting authenticated users to `/dashboard`. Activity 1's globally accessible `tasks` table was replaced by user-linked tasks.
 
-**Git history caveat:** ZIP downloads do not include `.git` history. The actual required `git merge` must be performed in your existing Git repository; do not claim the ZIP integration alone is evidence of a Git merge. From a clean clone of your existing repository:
 
-```bash
-git fetch origin
-git switch act2-accounts
-git pull
-git switch -c act3-ubac
-git merge origin/main
-# resolve conflicts, then copy the integrated application files from this ZIP
-git add .
-git commit -m "cmsc128-Indiv-Act3-finalX"
-git push -u origin act3-ubac
-```
-
-If `act3-ubac` already exists, switch to it rather than recreating it. Check `git status` and resolve any actual conflicts before committing. Pair work requires separate contributor branches and PRs.
 
 ## Schema
 
@@ -73,8 +59,5 @@ SQLite has no native PostgreSQL-style row-level security; the equivalent here is
 python -m unittest discover -s tests -v
 ```
 
-Tests check personal task isolation, IDOR attempts on reads/writes/delete/undo, authorized collaboration, unauthorized invitation, and CSRF. Before defense, manually check account registration, login, logout, refresh, backend restart, group invitations, task editing and 5-second Undo in a browser. Use the SQLite viewer to show users and tasks. Prepare two real accounts registered through the page and 3–5 tasks each; no demo accounts are shipped.
 
 **Trace an IDOR:** `GET /api/tasks/42` → `task_access(42)` → SQL joins `tasks` to `lists` and requires `lists.owner_id = session user ID` **or** membership in `list_members` → if no row matches, 404 without exposing task data. The same function protects update, complete, delete, undo, and finalize. An authenticated user's ID comes from Activity 2's verified session, never from the browser's JSON body.
-
-**Defense talking points:** Explain why `user_id` is a foreign key, why list membership is a separate table, why session cookies are signed, why CSRF and authorization solve different problems, and why checking only the frontend would not stop IDOR.
